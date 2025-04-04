@@ -1,5 +1,5 @@
 'use client';
-import NotConnected from "@/components/not-connected";
+// import NotConnected from "@/components/not-connected";
 import ChainCertSystem from "@/components/system";
 import { useAccount } from 'wagmi';
 

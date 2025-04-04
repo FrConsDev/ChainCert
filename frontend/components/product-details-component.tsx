@@ -5,7 +5,7 @@ import { useReadContract } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '@/constants';
 import { Input } from './ui/input';
 import { Product } from '@/interface/product';
-import { useFetchMetadata } from '@/services/fetch-metadata';
+// import { useFetchMetadata } from '@/services/fetch-metadata';
 
 const ProductDetailsComponent = () => {
   const [inputAddress, setInputAddress] = useState("");
