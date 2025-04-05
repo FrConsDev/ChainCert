@@ -3,20 +3,18 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 const ChainCertModule = buildModule("ChainCertModule", (m) => {
   const chainCert = m.contract("ChainCert");
 
-  const enterprises: string[] = [
-    "0x1234567890123456789012345678901234567890",
-    "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-  ];
-
   const owner = m.getAccount(0);
 
   for (let i = 0; i < 3; i++) {
-    const serialNumber = `SN-${i}-${i}`;
-    const publicId = `PID-${i}-${i}`;
+    const serialNumber = `SN-${Date.now()}-${i}`;
+    const publicId = `PID-${Date.now()}-${i}`;
+    
+    const uniqueId = `mintProductDate${Date.now()}Count${i}`;
     const metadataURI = 'bafkreicqrutbejnu273znextky4xltyyy35jxwyiuwo2i57nih25cn7pgi';
-    const uniqueId = `mintProduct${i+1}`;
 
-    m.call(chainCert, "mintProduct", [enterprises[i % 2], metadataURI, serialNumber, publicId], {
+    console.log(`Serial Number: ${serialNumber}, Public ID: ${publicId}`);
+
+    m.call(chainCert, "mintProduct", [owner, metadataURI, serialNumber, publicId], {
       from: owner,
       id: uniqueId,
     });
