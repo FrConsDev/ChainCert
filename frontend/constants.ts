@@ -1,7 +1,6 @@
 
 
-// export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-export const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 export const CONTRACT_BLOCK_START = BigInt(
     Number(process.env.NEXT_PUBLIC_CONTRACT_BLOCK_START || 0),
 );
@@ -270,6 +269,25 @@ export const CONTRACT_ABI =  [
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductListedForSale",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "recipient",
@@ -301,6 +319,37 @@ export const CONTRACT_ABI =  [
       }
     ],
     "name": "ProductMinted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProductSold",
     "type": "event"
   },
   {
@@ -368,6 +417,19 @@ export const CONTRACT_ABI =  [
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "buy",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "serialNumber",
         "type": "string"
@@ -401,7 +463,7 @@ export const CONTRACT_ABI =  [
     "inputs": [
       {
         "internalType": "string",
-        "name": "publicId",
+        "name": "publicIdOrSerialNumber",
         "type": "string"
       }
     ],
@@ -433,6 +495,21 @@ export const CONTRACT_ABI =  [
             "internalType": "bool",
             "name": "isClaimed",
             "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isForSale",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
           }
         ],
         "internalType": "struct ChainCert.Product",
@@ -444,7 +521,13 @@ export const CONTRACT_ABI =  [
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
     "name": "getProductsByOwner",
     "outputs": [
       {
@@ -473,6 +556,21 @@ export const CONTRACT_ABI =  [
             "internalType": "bool",
             "name": "isClaimed",
             "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "isForSale",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
           }
         ],
         "internalType": "struct ChainCert.Product[]",
@@ -584,6 +682,24 @@ export const CONTRACT_ABI =  [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
+      }
+    ],
+    "name": "putForSales",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -768,3 +884,5 @@ export const wagmiContractConfig = {
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
 };
+
+
