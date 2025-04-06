@@ -16,6 +16,7 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
         bool isForSale;
         uint256 price;
         uint256 tokenId;
+        bool exists;
     }
 
     mapping(string => uint256) private _publicIdToTokenId;
@@ -52,6 +53,11 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
 
     constructor() ERC721A("ChainCert", "CC") Ownable(msg.sender) {}
 
+    modifier productExists(uint256 tokenId) {
+        require(_products[tokenId].exists, "Product does not exist");
+        _;
+    }
+
     function _startTokenId() internal pure override returns (uint256) {
         return 1;
     }
@@ -69,11 +75,17 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
         string memory serialNumber,
         string memory publicId
     ) external onlyOwner returns (uint256) {
+        uint256 snTokenId = _serialNumberToTokenId[serialNumber];
+        uint256 pidTokenId = _publicIdToTokenId[publicId];
+
         require(
-            _serialNumberToTokenId[serialNumber] == 0,
+            snTokenId == 0 || !_products[snTokenId].exists,
             "Product already registered"
         );
-        require(_publicIdToTokenId[publicId] == 0, "PublicId already used");
+        require(
+            pidTokenId == 0 || !_products[pidTokenId].exists,
+            "PublicId already used"
+        );
 
         uint256 newTokenId = _nextTokenId();
         _mint(address(this), 1);
@@ -89,7 +101,8 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
             isClaimed: false,
             isForSale: false,
             price: 0,
-            tokenId: newTokenId
+            tokenId: newTokenId,
+            exists: true
         });
 
         emit ProductMinted(
@@ -109,7 +122,7 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
      */
     function claimProduct(string memory serialNumber) external nonReentrant {
         uint256 tokenId = _serialNumberToTokenId[serialNumber];
-        require(tokenId != 0, "Product not found");
+        require(_products[tokenId].exists, "Product not found");
         Product storage product = _products[tokenId];
         require(!product.isClaimed, "Product already claimed");
 
@@ -133,7 +146,10 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
      * @param tokenId Token ID of the product
      * @param price Price for selling the product
      */
-    function putForSales(uint256 tokenId, uint256 price) external {
+    function putForSales(
+        uint256 tokenId,
+        uint256 price
+    ) external productExists(tokenId) {
         require(ownerOf(tokenId) == msg.sender, "Not token owner");
         require(price > 0, "Price must be greater than 0");
 
@@ -148,7 +164,9 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
      * @dev Buy a product that is listed for sale
      * @param tokenId Token ID of the product
      */
-    function buy(uint256 tokenId) external payable {
+    function buy(
+        uint256 tokenId
+    ) external payable nonReentrant productExists(tokenId) {
         Product storage product = _products[tokenId];
         require(product.isForSale, "Product not for sale");
         require(msg.value >= product.price, "Insufficient funds");
@@ -179,7 +197,7 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
             tokenId = _serialNumberToTokenId[publicIdOrSerialNumber];
         }
 
-        require(tokenId != 0, "Product not found");
+        require(_products[tokenId].exists, "Product not found");
 
         return _products[tokenId];
     }
@@ -197,6 +215,10 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
         uint256 /*quantity*/
     ) internal override {
         uint256 tokenId = startTokenId;
+        require(
+            _products[tokenId].exists,
+            "Product does not exist after transfer"
+        );
 
         if (from != address(0)) {
             _removeTokenFromOwner(from, tokenId);
