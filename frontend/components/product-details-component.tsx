@@ -42,9 +42,9 @@ const ProductDetailsComponent = () => {
       } else {
         setErrorMessage("Product not found.");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setErrorMessage("An error occurred while reading the contract.");
+    } catch (error: unknown) {
+      console.error("Error :", error);
+        setErrorMessage(error instanceof Error ? `Erreur : ${error.message}`: "An error occured");
     } finally {
       setIsLoading(false);
     }
