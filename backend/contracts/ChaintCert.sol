@@ -170,7 +170,7 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
     ) external payable nonReentrant productExists(tokenId) {
         Product storage product = _products[tokenId];
         require(product.isForSale, "Product not for sale");
-        require(msg.value >= product.price, "Insufficient funds");
+        require(msg.value == product.price, "Funds not equal to price");
 
         address seller = ownerOf(tokenId);
         require(seller != msg.sender, "Cannot buy your own product");
