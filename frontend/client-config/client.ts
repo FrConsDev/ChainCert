@@ -7,7 +7,7 @@ export function getConfigForClient() {
 
   return {
     chain: chain,
-    transport: http(),
+    transport: http(isHardhat ? "" : "https://sepolia.infura.io/v3/46f11c834c26481296d7bd2e2ff8e2f6"),
   };
 }
 
