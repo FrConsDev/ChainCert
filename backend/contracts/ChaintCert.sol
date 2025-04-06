@@ -175,8 +175,6 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
         address seller = ownerOf(tokenId);
         require(seller != msg.sender, "Cannot buy your own product");
 
-        product.isForSale = false;
-        product.price = 0;
         _approve(msg.sender, tokenId);
         safeTransferFrom(seller, msg.sender, tokenId);
         (bool success, ) = payable(seller).call{value: msg.value}("");
@@ -221,6 +219,12 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
             "Product does not exist after transfer"
         );
 
+        Product storage product = _products[tokenId];
+
+        if (product.isForSale) {
+            product.isForSale = false;
+            product.price = 0;
+        }
         if (from != address(0)) {
             _removeTokenFromOwner(from, tokenId);
         }
