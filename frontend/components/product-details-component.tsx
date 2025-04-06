@@ -1,62 +1,68 @@
 "use client";
-import React, { useState } from 'react'
-import { Button } from './ui/button'
-import { useReadContract } from "wagmi";
+import React, { useMemo, useState } from 'react';
+import { Button } from './ui/button';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '@/constants';
 import { Input } from './ui/input';
 import { Product } from '@/interface/product';
+import { MetadataComponent } from './metadata';
 import { useFetchMetadata } from '@/services/fetch-metadata';
+import { usePublicClient } from 'wagmi';
 
 const ProductDetailsComponent = () => {
-  const [inputAddress, setInputAddress] = useState("");
-  const [claimedProduct, setClaimedProduct] = useState<Product | null>(null);
+  const [inputIdOrSerial, setInputIdOrSerial] = useState("");
+  const [productDetails, setProductDetails] = useState<Product | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const publicClient = usePublicClient();
 
-  const { data: product, error, isError } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
-    functionName: "getProductDetailsByPublicId",
-    args: inputAddress ? [inputAddress] : undefined,
-  });
+  const memoizedProductArray = useMemo(() => {
+    return productDetails
+      ? [{ publicId: productDetails.publicId, metadataURI: productDetails.metadataURI }]
+      : [];
+  }, [productDetails]);
 
-    //  const metadataList = useFetchMetadata(
-    //       product ? product.map(({ publicId, metadataURI }) => ({ publicId, metadataURI })) : []
-    //   );
-
-  const handleClaim = async () => {
-    if (!inputAddress) {
-      setErrorMessage("Veuillez entrer un identifiant public.");
+  const handleGetDetails = async () => {
+    if (!inputIdOrSerial) {
+      setErrorMessage("Please enter a public identifier or serial number.");
       return;
     }
     setErrorMessage(null);
     setIsLoading(true);
 
     try {
+      const product = await publicClient!.readContract({
+        address: CONTRACT_ADDRESS as `0x${string}`,
+        abi: CONTRACT_ABI,
+        functionName: "getProductDetailsByPublicId",
+        args: [inputIdOrSerial],
+      });
+
       if (product) {
-        setClaimedProduct(product as Product);
+        setProductDetails(product as Product);
       } else {
-        setErrorMessage("Product not found");
+        setErrorMessage("Product not found.");
       }
     } catch (error) {
       console.error("Error:", error);
-      setErrorMessage("An error occured");
+      setErrorMessage("An error occurred while reading the contract.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const metadataList = useFetchMetadata(memoizedProductArray);
 
   return (
     <div className="flex flex-col items-center space-y-5 p-5 gap-5 w-full max-w-screen-lg mx-auto">
       <Input
         type="string"
         id="address"
-        placeholder="Bar code or public ID"
-        onChange={(e) => setInputAddress(e.target.value)}
+        placeholder="Public ID or serial Number"
+        onChange={(e) => setInputIdOrSerial(e.target.value)}
       />
       <Button
-        onClick={handleClaim}
-        disabled={isLoading || !inputAddress}
+        onClick={handleGetDetails}
+        disabled={isLoading || !inputIdOrSerial}
         className="bg-[#212F3C] w-full mt-4"
       >
         {isLoading ? <span style={{ color: "white" }}>Loading...</span> : <span style={{ color: "white" }}>Get details</span>}
@@ -64,19 +70,21 @@ const ProductDetailsComponent = () => {
 
       {errorMessage && <p className="text-red-500 mt-2">{errorMessage}</p>}
 
-      {claimedProduct && !errorMessage && (
+      {productDetails && !errorMessage && (
         <div>
-          <h2>Détails du produit</h2>
-          <p><strong>Numéro de série:</strong> {claimedProduct.serialNumber}</p>
-          <p><strong>Identifiant public:</strong> {claimedProduct.publicId}</p>
-          <p><strong>Entreprise:</strong> {claimedProduct.enterprise}</p>
-          <p><strong>Revendiqué:</strong> {claimedProduct.isClaimed ? "Yes" : "No"}</p>
+          <p><strong>Serial Number:</strong> {productDetails.serialNumber}</p>
+          <p><strong>Public ID:</strong> {productDetails.publicId}</p>
+          <p><strong>Enterprise:</strong> {productDetails.enterprise}</p>
+          <p><strong>Claimed:</strong> {productDetails.isClaimed ? "Yes" : "No"}</p>
+          {productDetails && metadataList[productDetails.publicId] ? (
+            <MetadataComponent {...metadataList[productDetails.publicId]} />
+          ) : productDetails ? (
+            <p className="text-gray-500">Loading metadata...</p>
+          ) : null}
         </div>
       )}
-
-      {isError && !claimedProduct && <p className="text-red-500 mt-2">Error: {error?.message}</p>}
     </div>
-  )
-}
+  );
+};
 
 export default ProductDetailsComponent;
