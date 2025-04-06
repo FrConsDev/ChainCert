@@ -225,13 +225,12 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
             product.isForSale = false;
             product.price = 0;
         }
+
         if (from != address(0)) {
             _removeTokenFromOwner(from, tokenId);
         }
 
-        if (to != address(0)) {
-            _addTokenToOwner(to, tokenId);
-        }
+        _addTokenToOwner(to, tokenId);
 
         super._afterTokenTransfers(from, to, tokenId, 1);
     }
