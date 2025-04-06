@@ -7,12 +7,12 @@ import { useFetchMetadata } from '@/services/fetch-metadata';
 
 const MyProductComponent = () => {
     const { address } = useAccount();
-
+    
     const { data: products, error, isError, isLoading } = useReadContract({
-        address: CONTRACT_ADDRESS,
+        address: CONTRACT_ADDRESS as `0x${string}`,
         abi: CONTRACT_ABI,
         functionName: "getProductsByOwner",
-        account: address,
+        args: [address as `0x${string}`],
     });
 
     const metadataList = useFetchMetadata(
@@ -39,12 +39,11 @@ const MyProductComponent = () => {
                     <p><strong>Identifiant public:</strong> {product.publicId}</p>
                     <p><strong>Entreprise:</strong> {product.enterprise}</p>
                     <p><strong>Réclamé:</strong> {product.isClaimed ? "Oui" : "Non"}</p>
-                    {metadataList && metadataList[product.publicId] ? (
-                        <MetadataComponent
-                            name={metadataList[product.publicId].name}
-                            description={metadataList[product.publicId].description} image={metadataList[product.publicId].image} />
-                    ) : (<p className="text-gray-500">Loading metadata...</p>
-                    )}
+                   {product && metadataList[product.publicId] ? (
+                               <MetadataComponent {...metadataList[product.publicId]} />
+                             ) : product ? (
+                               <p className="text-gray-500">Loading metadata...</p>
+                             ) : null}
                 </div>
             ))}
         </div>
