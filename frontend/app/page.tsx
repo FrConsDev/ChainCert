@@ -11,8 +11,7 @@ export default function Home() {
       {isConnected ? (
         <ChainCertSystem />
       ) : (
-        <ChainCertSystem />
-        // <NotConnected />
+        <NotConnected />
       )}
     </>
   );
