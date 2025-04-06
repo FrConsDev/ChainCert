@@ -2,8 +2,8 @@
 import type React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { config } from '../wagmi';
 import { WagmiProvider } from 'wagmi';
+import { config } from '@/client-config/config';
 
 const queryClient = new QueryClient();
 

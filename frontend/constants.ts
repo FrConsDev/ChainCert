@@ -79,6 +79,11 @@ export const CONTRACT_ABI =  [
   },
   {
     "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "SequentialMintExceedsLimit",
     "type": "error"
   },
@@ -510,6 +515,11 @@ export const CONTRACT_ABI =  [
             "internalType": "uint256",
             "name": "tokenId",
             "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
           }
         ],
         "internalType": "struct ChainCert.Product",
@@ -571,6 +581,11 @@ export const CONTRACT_ABI =  [
             "internalType": "uint256",
             "name": "tokenId",
             "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "exists",
+            "type": "bool"
           }
         ],
         "internalType": "struct ChainCert.Product[]",

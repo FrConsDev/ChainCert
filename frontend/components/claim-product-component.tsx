@@ -5,10 +5,10 @@ import { useWriteContract } from "wagmi";
 import { parseAbiItem } from "viem";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/constants";
 import { Input } from "./ui/input";
-import { publicClient } from "@/client-config/client";
 import { Product } from "@/interface/product";
 import { MetadataComponent } from "./metadata";
 import { useFetchMetadata } from "@/services/fetch-metadata";
+import { publicClient } from "@/client-config/public-client";
 
 const ClaimProductComponent = () => {
   const [inputAddress, setInputAddress] = useState("");
@@ -37,12 +37,11 @@ const ClaimProductComponent = () => {
 
       try {
         const claimedEvents = await publicClient.getLogs({
-          address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          address: CONTRACT_ADDRESS as `0x${string}`,
           event: parseAbiItem("event ProductClaimed(address indexed buyer, uint256 indexed tokenId, string serialNumber, string publicId, string metadataURI, bool isClaimed)"),
           fromBlock: BigInt(0),
           toBlock: "latest",
         });
-
         if (claimedEvents.length > 0) {
           const { args } = claimedEvents[claimedEvents.length - 1];
           setClaimedProduct({
