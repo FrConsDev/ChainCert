@@ -167,12 +167,22 @@ contract ChainCert is ERC721A, Ownable {
 
         emit ProductSold(tokenId, seller, msg.sender, msg.value);
     }
+
+    /**
+     * @dev Return product details from a publicId or serialNumber
+     * @param publicIdOrSerialNumber Unique product public ID or serial number
      */
     function getProductDetailsByPublicId(
-        string memory publicId
+        string memory publicIdOrSerialNumber
     ) external view returns (Product memory) {
-        uint256 tokenId = _publicIdToTokenId[publicId];
+        uint256 tokenId = _publicIdToTokenId[publicIdOrSerialNumber];
+
+        if (tokenId == 0) {
+            tokenId = _serialNumberToTokenId[publicIdOrSerialNumber];
+        }
+
         require(tokenId != 0, "Product not found");
+
         return _products[tokenId];
     }
 
