@@ -17,7 +17,7 @@ if (process.env.NEXT_PUBLIC_BLOCKCHAIN === 'hardhat') {
 
   publicClient = createPublicClient({ 
     chain: sepolia,
-    transport: http(`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCH_KEY}`)
+    transport: http(`https://eth-sepolia.g.alchemy.com/v2/YQgEOSE5qRyYwg78WImk-WrECVuUIblt`)
   });
 
 }

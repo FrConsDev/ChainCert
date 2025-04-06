@@ -17,10 +17,10 @@ const customSepolia = defineChain({
   },
   rpcUrls: {
     default: {
-      http: [`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCH_KEY}`],
+      http: [`https://eth-sepolia.g.alchemy.com/v2/YQgEOSE5qRyYwg78WImk-WrECVuUIblt`],
     },
     public: {
-      http: [`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCH_KEY}`],
+      http: [`https://eth-sepolia.g.alchemy.com/v2/YQgEOSE5qRyYwg78WImk-WrECVuUIblt`],
     },
   },
   blockExplorers: {
@@ -36,7 +36,7 @@ export const config = getDefaultConfig({
     projectId: '14lstgt84q6kwafq',
     chains: [customSepolia, hardhat],
     transports: {
-      [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCH_KEY}`),
+      [sepolia.id]: http(`https://eth-sepolia.g.alchemy.com/v2/YQgEOSE5qRyYwg78WImk-WrECVuUIblt`),
       [hardhat.id]: http('http://127.0.0.1:8545'),
     },
     ssr: true,
