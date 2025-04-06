@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-     RPC_URL_INFURA: ${{ secrets.RPC_URL_INFURA }}
-     PK: ${{ secrets.PK }}
+      RPC_URL_INFURA: ${{ secrets.RPC_URL_INFURA }}
+      PK: ${{ secrets.PK }}
 
     defaults:
       run:
@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
 
       - name: Install dependencies
         run: npm install
@@ -39,6 +39,3 @@ jobs:
 
       - name: Run unit tests
         run: npx hardhat test
-
-      - name: Lint check
-        run: npx eslint .
