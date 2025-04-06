@@ -59,11 +59,11 @@ contract ChainCert is ERC721A, Ownable {
     }
 
     /**
-     * @dev Mint a NFT a product on behalf of a enterprise
-     * @param recipient Adress who will receive the NFT
-     * @param metadata Product metadata
+     * @dev Mint a NFT for a product on behalf of an enterprise
+     * @param recipient Address associated with the product
+     * @param metadata Product metadata URI
      * @param serialNumber Unique product serial number
-     * @param publicId Unique product publicId
+     * @param publicId Unique product public ID
      */
     function mintProduct(
         address recipient,
@@ -106,7 +106,7 @@ contract ChainCert is ERC721A, Ownable {
     }
 
     /**
-     * @dev A buyer claim product ownership by sending serial number
+     * @dev A buyer claims product ownership by sending the serial number
      * @param serialNumber Unique product serial number
      */
     function claimProduct(string memory serialNumber) external {
