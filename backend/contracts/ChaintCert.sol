@@ -177,10 +177,10 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
 
         product.isForSale = false;
         product.price = 0;
-
-        _approve(msg.sender, tokenId); 
+        _approve(msg.sender, tokenId);
         safeTransferFrom(seller, msg.sender, tokenId);
-        payable(seller).transfer(msg.value);
+        (bool success, ) = payable(seller).call{value: msg.value}("");
+        require(success, "Transfer failed");
 
         emit ProductSold(tokenId, seller, msg.sender, msg.value);
     }
