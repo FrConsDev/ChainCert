@@ -88,7 +88,6 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
         );
 
         uint256 newTokenId = _nextTokenId();
-        _mint(address(this), 1);
 
         _serialNumberToTokenId[serialNumber] = newTokenId;
         _publicIdToTokenId[publicId] = newTokenId;
@@ -112,6 +111,8 @@ contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
             serialNumber,
             publicId
         );
+
+        _mint(address(this), 1);
 
         return newTokenId;
     }
