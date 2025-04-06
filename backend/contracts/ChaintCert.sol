@@ -104,10 +104,8 @@ contract ChainCert is ERC721A, Ownable {
         Product storage product = _products[tokenId];
         require(!product.isClaimed, "Product already claimed");
 
-    // *************************************************************************** revoir le approve
-        _approve(msg.sender, tokenId);
-        address tokenOwner = ownerOf(tokenId);
-        safeTransferFrom(tokenOwner, msg.sender, tokenId);
+        _approve(msg.sender, tokenId, false);
+        safeTransferFrom(address(this), msg.sender, tokenId);
 
         product.isClaimed = true;
 
@@ -115,9 +113,9 @@ contract ChainCert is ERC721A, Ownable {
             msg.sender,
             tokenId,
             serialNumber,
-            _products[tokenId].publicId,
-            _products[tokenId].metadataURI,
-            product.isClaimed
+            product.publicId,
+            product.metadataURI,
+            true
         );
     }
 
