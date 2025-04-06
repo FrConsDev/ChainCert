@@ -187,6 +187,13 @@ describe("ChainCert", function () {
         .to.be.revertedWith("Not token owner");
     });
 
+    it("should revert because product not exist", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await expect(contract.connect(signer1).putForSales(99, price))
+        .to.be.revertedWith("Product does not exist");
+    });
+
     it("should revert because the price is zero", async function () {
       await mintTestProduct();
       await claimTestProduct();
@@ -222,6 +229,8 @@ describe("ChainCert", function () {
       expect(product.length).to.equal(1);
 
       expect(product[0].tokenId).to.equal(1);
+      expect(product[0].price).to.equal(0);
+      expect(product[0].isForSale).to.equal(false);
     });
 
     it("should revert because the product is not for sale", async function () {
@@ -232,6 +241,12 @@ describe("ChainCert", function () {
       ).to.be.revertedWith("Product not for sale");
     });
 
+    it("should revert because the product doest not exist", async function () {
+      await expect(
+        contract.connect(signer1).buy(99, { value: price })
+      ).to.be.revertedWith("Product does not exist");
+    });
+
     it("should revert because the buyer does not have enough funds", async function () {
       await mintTestProduct();
       await claimTestProduct();
@@ -240,7 +255,11 @@ describe("ChainCert", function () {
 
       await expect(
         contract.connect(newRandomSigner).buy(1, { value: parseEther("0.1") })
-      ).to.be.revertedWith("Insufficient funds");
+      ).to.be.revertedWith("Funds not equal to price");
+
+      await expect(
+        contract.connect(newRandomSigner).buy(1, { value: parseEther("2") })
+      ).to.be.revertedWith("Funds not equal to price");
     });
 
     it("should revert because the buyer is the owner of the product", async function () {
@@ -300,4 +319,40 @@ describe("ChainCert", function () {
     });
   });
 
+  it("should remove for sales if transfered", async function () {
+    await mintTestProduct();
+    await claimTestProduct();
+    await putForSalesTestProduct();
+    const ownerBeforeTransfer = await contract.ownerOf(1);
+    expect(ownerBeforeTransfer).to.equal(signer1.address);
+
+    const newRandomSigner = await connectRandomSigner();
+
+    await contract.connect(signer1).transferFrom(signer1.address, newRandomSigner.address, 1);
+    const newProduct = await contract.getProductsByOwner(newRandomSigner.address);
+
+    expect(newProduct.length).to.equal(1);
+    expect(newProduct[0].isForSale).to.equal(false);
+    expect(newProduct[0].price).to.equal(0);
+    expect(newProduct[0].isClaimed).to.equal(true);
+  });
+
+  it("should revert if transfer fails using call", async function () {
+    await mintTestProduct();
+    const buggedSigner = await connectRandomSigner();
+    await contract.connect(buggedSigner).claimProduct(serialNumber);
+    await contract.connect(buggedSigner).putForSales(1, price);
+    const failingBytecode = "0x6080604052348015600f57600080fd5b5060e88061001e6000396000f3fe6080604052600080fdfea2646970667358221220430b3271e7928a4f8a66f8fd2d897df02e2b53b660bda1ec8d2cc1c3d1b86e2764736f6c634300080a0033";
+
+    await ethers.provider.send("hardhat_setCode", [
+      buggedSigner.address,
+      failingBytecode
+    ]);
+
+    const newRandomSigner = await connectRandomSigner();
+
+    await expect(
+      contract.connect(newRandomSigner).buy(1, { value: parseEther("1") })
+    ).to.be.revertedWith("Transfer failed");
+  });
 });
