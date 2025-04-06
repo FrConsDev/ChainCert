@@ -3,12 +3,10 @@ pragma solidity ^0.8.28;
 
 import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
-contract ChainCert is ERC721A, Ownable {
-    using Strings for uint256;
-
+contract ChainCert is ERC721A, Ownable, ReentrancyGuard {
     struct Product {
         string serialNumber;
         string publicId;
@@ -109,7 +107,7 @@ contract ChainCert is ERC721A, Ownable {
      * @dev A buyer claims product ownership by sending the serial number
      * @param serialNumber Unique product serial number
      */
-    function claimProduct(string memory serialNumber) external {
+    function claimProduct(string memory serialNumber) external nonReentrant {
         uint256 tokenId = _serialNumberToTokenId[serialNumber];
         require(tokenId != 0, "Product not found");
         Product storage product = _products[tokenId];
