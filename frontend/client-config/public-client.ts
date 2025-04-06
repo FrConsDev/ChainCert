@@ -3,6 +3,9 @@ import { hardhat, sepolia } from "viem/chains";
 
 let publicClient: PublicClient;
 
+console.log("SEPOLIA KEY IS PRESENT = ", !!process.env.ALCH_KEY);
+console.log("NEXT_PUBLIC_BLOCKCHAIN = ", process.env.NEXT_PUBLIC_BLOCKCHAIN);
+
 if (process.env.NEXT_PUBLIC_BLOCKCHAIN === 'hardhat') {
   
   publicClient = createPublicClient({ 

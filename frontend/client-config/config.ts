@@ -4,6 +4,8 @@ import { hardhat, sepolia } from 'wagmi/chains';
 import { defineChain } from 'viem';
 import { http } from 'viem';
 
+console.log("SEPOLIA KEY IS PRESENT = ", !!process.env.ALCH_KEY);
+
 const customSepolia = defineChain({
   id: 11155111,
   name: 'Sepolia',
