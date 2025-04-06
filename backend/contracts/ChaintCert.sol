@@ -44,6 +44,14 @@ contract ChainCert is ERC721A, Ownable {
         bool isClaimed
     );
 
+    event ProductListedForSale(uint256 tokenId, uint256 price);
+    event ProductSold(
+        uint256 tokenId,
+        address indexed from,
+        address indexed to,
+        uint256 price
+    );
+
     constructor() ERC721A("ChainCert", "CC") Ownable(msg.sender) {}
 
     function _startTokenId() internal pure override returns (uint256) {
@@ -123,8 +131,42 @@ contract ChainCert is ERC721A, Ownable {
     }
 
     /**
-     * @dev Return product details from a publicId
-     * @param publicId Unique product publicId
+     * @dev List a product for sale
+     * @param tokenId Token ID of the product
+     * @param price Price for selling the product
+     */
+    function putForSales(uint256 tokenId, uint256 price) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        require(price > 0, "Price must be greater than 0");
+
+        Product storage product = _products[tokenId];
+        product.isForSale = true;
+        product.price = price;
+
+        emit ProductListedForSale(tokenId, price);
+    }
+
+    /**
+     * @dev Buy a product that is listed for sale
+     * @param tokenId Token ID of the product
+     */
+    function buy(uint256 tokenId) external payable {
+        Product storage product = _products[tokenId];
+        require(product.isForSale, "Product not for sale");
+        require(msg.value >= product.price, "Insufficient funds");
+
+        address seller = ownerOf(tokenId);
+        require(seller != msg.sender, "Cannot buy your own product");
+
+        product.isForSale = false;
+        product.price = 0;
+
+        _approve(msg.sender, tokenId); 
+        safeTransferFrom(seller, msg.sender, tokenId);
+        payable(seller).transfer(msg.value);
+
+        emit ProductSold(tokenId, seller, msg.sender, msg.value);
+    }
      */
     function getProductDetailsByPublicId(
         string memory publicId
@@ -135,7 +177,49 @@ contract ChainCert is ERC721A, Ownable {
     }
 
     /**
-     * @dev Return all product owned by a buyer. An owned product limit can be set in order to enforce security and performance
+     * @dev Hook that is called after any transfer of tokens. It updates the mapping of owned tokens.
+     * @param from The address that is sending the token
+     * @param to The address that is receiving the token
+     * @param startTokenId The first token ID in the transfer
+     */
+    function _afterTokenTransfers(
+        address from,
+        address to,
+        uint256 startTokenId,
+        uint256 /*quantity*/
+    ) internal override {
+        uint256 tokenId = startTokenId;
+
+        if (from != address(0)) {
+            _removeTokenFromOwner(from, tokenId);
+        }
+
+        if (to != address(0)) {
+            _addTokenToOwner(to, tokenId);
+        }
+
+        super._afterTokenTransfers(from, to, tokenId, 1);
+    }
+
+    function _addTokenToOwner(address to, uint256 tokenId) internal {
+        _ownedTokensIndex[tokenId] = _ownedTokens[to].length;
+        _ownedTokens[to].push(tokenId);
+    }
+
+    function _removeTokenFromOwner(address from, uint256 tokenId) internal {
+        uint256 lastTokenIndex = _ownedTokens[from].length - 1;
+        uint256 tokenIndex = _ownedTokensIndex[tokenId];
+
+        if (tokenIndex != lastTokenIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+            _ownedTokens[from][tokenIndex] = lastTokenId;
+            _ownedTokensIndex[lastTokenId] = tokenIndex;
+        }
+
+        _ownedTokens[from].pop();
+        delete _ownedTokensIndex[tokenId];
+    }
+
     /**
      * @dev Retrieve the list of products owned by a given address
      * @param owner Address of the product owner
