@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 import { ChainCert } from "../typechain-types";
-import { HDNodeWallet, randomBytes } from "ethers";
+import { HDNodeWallet, parseEther } from "ethers";
 
 async function connectRandomSigner() {
   const randomSigner = ethers.Wallet.createRandom().connect(ethers.provider);
@@ -22,6 +22,7 @@ describe("ChainCert", function () {
   const publicId = "PID-1-1";
   const metadataURI = "ipfs://example_metadata_SN-1-1";
   const enterprise = ethers.Wallet.createRandom();
+  const price = parseEther("1");
 
   before(async function () {
     signer1 = await connectRandomSigner();
@@ -48,28 +49,33 @@ describe("ChainCert", function () {
     return testTx;
   }
 
+  async function putForSalesTestProduct(salesToken = 1, priceTestProduct = price) {
+    const testTx = await contract.connect(signer1).putForSales(salesToken, priceTestProduct);
+
+    return testTx;
+  }
+
   describe("Minting Products", function () {
     it("should mint and emit a mint event correctly", async function () {
       await expect(contract.mintProduct(enterprise, metadataURI, serialNumber, publicId))
-      .to.emit(contract, 'ProductMinted').withArgs(enterprise, 1, metadataURI, serialNumber, publicId);
+        .to.emit(contract, 'ProductMinted').withArgs(enterprise, 1, metadataURI, serialNumber, publicId);
     });
 
     it("should revert because of duplicate serial number", async function () {
       await mintTestProduct();
       await expect(contract.mintProduct(enterprise, metadataURI, serialNumber, publicId))
-      .to.be.revertedWith("Product already registered");
+        .to.be.revertedWith("Product already registered");
     });
 
-    // A VOIR COMMENT FONT LES CONCURRENTS car un id public peut ne pas etre aleatoire
     it("should revert because of duplicate publicId", async function () {
       await mintTestProduct();
       await expect(contract.mintProduct(enterprise, metadataURI, 'serialNumber', publicId))
-      .to.be.revertedWith("PublicId already used");
+        .to.be.revertedWith("PublicId already used");
     });
 
     it("should revert because only owner can mint", async function () {
       await expect(contract.connect(signer1).mintProduct(enterprise, metadataURI, serialNumber, publicId))
-      .to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount")
+        .to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount")
     });
   });
 
@@ -83,14 +89,14 @@ describe("ChainCert", function () {
     it("should revert because product doesnt exist", async function () {
       await mintTestProduct();
       await expect(contract.connect(signer1).claimProduct('serialNumber'))
-      .to.be.revertedWith("Product not found");
+        .to.be.revertedWith("Product not found");
     });
 
     it("should revert because product is already claimed", async function () {
       await mintTestProduct();
       await claimTestProduct();
       await expect(contract.connect(signer1).claimProduct(serialNumber))
-      .to.be.revertedWith("Product already claimed");
+        .to.be.revertedWith("Product already claimed");
     });
   });
 
@@ -106,10 +112,21 @@ describe("ChainCert", function () {
       expect(productDetails.isClaimed).to.equal(false);
     });
 
+    it("should product details with serial number", async function () {
+      await mintTestProduct();
+      const productDetails = await contract.connect(signer1).getProductDetailsByPublicId(serialNumber);
+
+      expect(productDetails.serialNumber).to.equal(serialNumber);
+      expect(productDetails.publicId).to.equal(publicId);
+      expect(productDetails.metadataURI).to.equal(metadataURI);
+      expect(productDetails.enterprise).to.equal(enterprise);
+      expect(productDetails.isClaimed).to.equal(false);
+    });
+
     it("should revert because product doesnt exist", async function () {
       await mintTestProduct();
       await expect(contract.connect(signer1).getProductDetailsByPublicId('publicId'))
-      .to.be.revertedWith("Product not found");
+        .to.be.revertedWith("Product not found");
     });
 
     it("should allow user to retrieve their product", async function () {
@@ -118,7 +135,7 @@ describe("ChainCert", function () {
       await mintTestProduct(1);
       await claimTestProduct(serialNumber.concat('-1'));
 
-      const productOwner = await contract.connect(signer1).getProductsByOwner();
+      const productOwner = await contract.connect(signer1).getProductsByOwner(signer1.address);
       expect(productOwner).length(2);
       expect(productOwner[0].serialNumber).to.equal(serialNumber);
       expect(productOwner[0].publicId).to.equal(publicId);
@@ -132,7 +149,7 @@ describe("ChainCert", function () {
       expect(productOwner[1].isClaimed).to.equal(true);
     });
 
-    
+
     it("should not retrieve not owned product", async function () {
       await mintTestProduct();
       await claimTestProduct();
@@ -143,14 +160,144 @@ describe("ChainCert", function () {
       const newRandomSigner = await connectRandomSigner();
       await contract.connect(newRandomSigner).claimProduct(serialNumber.concat('-2'));
 
-      const productOwner = await contract.connect(newRandomSigner).getProductsByOwner();
+      const productOwner = await contract.connect(newRandomSigner).getProductsByOwner(newRandomSigner.address);
       expect(productOwner).length(1);
 
     });
 
     it("should revert because any product is owned", async function () {
       await mintTestProduct();
-      await expect(contract.connect(signer1).getProductsByOwner()).to.be.revertedWith("You dont own any product");
+      expect(await contract.connect(signer1).getProductsByOwner(signer1.address)).to.be.deep.equal([]);
     });
   });
+
+  describe("Listing Products for Sale", function () {
+    it("should allow the owner to list a product for sale", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await expect(contract.connect(signer1).putForSales(1, price))
+        .to.emit(contract, 'ProductListedForSale')
+        .withArgs(1, price);
+    });
+
+    it("should revert because the caller is not the owner", async function () {
+      await mintTestProduct();
+      const newRandomSigner = await connectRandomSigner();
+      await expect(contract.connect(newRandomSigner).putForSales(1, price))
+        .to.be.revertedWith("Not token owner");
+    });
+
+    it("should revert because the price is zero", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await expect(contract.connect(signer1).putForSales(1, 0))
+        .to.be.revertedWith("Price must be greater than 0");
+    });
+  });
+
+  describe("Buying a Product", function () {
+    it("should allow a user to buy a product", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await putForSalesTestProduct();
+      const newRandomSigner = await connectRandomSigner();
+
+      const balanceBefore = await ethers.provider.getBalance(newRandomSigner.address);
+      const sellerBalanceBefore = await ethers.provider.getBalance(signer1.address);
+
+      await expect(
+        contract.connect(newRandomSigner).buy(1, { value: price })
+      )
+        .to.emit(contract, "ProductSold")
+        .withArgs(1, signer1.address, newRandomSigner.address, price);
+
+      const balanceAfter = await ethers.provider.getBalance(newRandomSigner.address);
+      const sellerBalanceAfter = await ethers.provider.getBalance(signer1.address);
+
+      expect(balanceAfter).to.be.below(balanceBefore - price);
+      expect(sellerBalanceAfter).to.be.equal(sellerBalanceBefore + price);
+
+      const product = await contract.getProductsByOwner(newRandomSigner.address);
+
+      expect(product.length).to.equal(1);
+
+      expect(product[0].tokenId).to.equal(1);
+    });
+
+    it("should revert because the product is not for sale", async function () {
+      await mintTestProduct();
+
+      await expect(
+        contract.connect(signer1).buy(1, { value: price })
+      ).to.be.revertedWith("Product not for sale");
+    });
+
+    it("should revert because the buyer does not have enough funds", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await putForSalesTestProduct();
+      const newRandomSigner = await connectRandomSigner();
+
+      await expect(
+        contract.connect(newRandomSigner).buy(1, { value: parseEther("0.1") })
+      ).to.be.revertedWith("Insufficient funds");
+    });
+
+    it("should revert because the buyer is the owner of the product", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await putForSalesTestProduct();
+
+      await expect(
+        contract.connect(signer1).buy(1, { value: price })
+      ).to.be.revertedWith("Cannot buy your own product");
+    });
+
+    it("should transfer the product correctly to the buyer", async function () {
+      await mintTestProduct();
+      await claimTestProduct();
+      await putForSalesTestProduct();
+      const newRandomSigner = await connectRandomSigner();
+
+      await expect(
+        contract.connect(newRandomSigner).buy(1, { value: price })
+      )
+        .to.emit(contract, "ProductSold")
+        .withArgs(1, signer1.address, newRandomSigner.address, price);
+
+      const newOwner = await contract.ownerOf(1);
+      expect(newOwner).to.equal(newRandomSigner.address);
+    });
+
+    it("should move the last token when a non-last token is removed", async function () {
+      await mintTestProduct();
+      await mintTestProduct(2);
+      await mintTestProduct(3);
+      await claimTestProduct();
+      await claimTestProduct("SN-1-1-2");
+      await claimTestProduct("SN-1-1-3");
+
+      const productOwner = await contract.connect(signer1).getProductsByOwner(signer1.address);
+      expect(productOwner).length(3);
+      await putForSalesTestProduct(2);
+
+      const newRandomSigner = await connectRandomSigner();
+
+      await expect(
+        contract.connect(newRandomSigner).buy(2, { value: price })
+      )
+        .to.emit(contract, "ProductSold")
+        .withArgs(2, signer1.address, newRandomSigner.address, price);
+      const productsAfterRemovalAddr1 = await contract.getProductsByOwner(signer1.address);
+      const productsAfterRemovalAddr2 = await contract.getProductsByOwner(newRandomSigner.address);
+
+      expect(productsAfterRemovalAddr1.length).to.equal(2);
+      expect(productsAfterRemovalAddr2.length).to.equal(1);
+
+      expect(productsAfterRemovalAddr1[0].tokenId).to.equal(1);
+      expect(productsAfterRemovalAddr1[1].tokenId).to.equal(3);
+      expect(productsAfterRemovalAddr2[0].tokenId).to.equal(2);
+    });
+  });
+
 });
