@@ -14,6 +14,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    env:
+     RPC_URL_INFURA: ${{ secrets.RPC_URL_INFURA }}
+     PK: ${{ secrets.PK }}
+
     defaults:
       run:
         working-directory: backend
@@ -36,6 +40,5 @@ jobs:
       - name: Run unit tests
         run: npx hardhat test
 
-      # Optionnel : lint
       - name: Lint check
         run: npx eslint .
