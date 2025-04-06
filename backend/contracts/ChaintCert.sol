@@ -15,6 +15,9 @@ contract ChainCert is ERC721A, Ownable {
         string metadataURI;
         address enterprise;
         bool isClaimed;
+        bool isForSale;
+        uint256 price;
+        uint256 tokenId;
     }
 
     mapping(string => uint256) private _publicIdToTokenId;
@@ -57,19 +60,14 @@ contract ChainCert is ERC721A, Ownable {
         string memory serialNumber,
         string memory publicId
     ) external onlyOwner returns (uint256) {
-        // ************************************************** revoir le business model (payable ou non)
         require(
             _serialNumberToTokenId[serialNumber] == 0,
             "Product already registered"
         );
-        require(
-            _publicIdToTokenId[publicId] == 0,
-            "PublicId already used"
-        );
+        require(_publicIdToTokenId[publicId] == 0, "PublicId already used");
 
         uint256 newTokenId = _nextTokenId();
-
-        _mint(recipient, 1);
+        _mint(address(this), 1);
 
         _serialNumberToTokenId[serialNumber] = newTokenId;
         _publicIdToTokenId[publicId] = newTokenId;
@@ -79,7 +77,10 @@ contract ChainCert is ERC721A, Ownable {
             publicId: publicId,
             metadataURI: metadata,
             enterprise: recipient,
-            isClaimed: false
+            isClaimed: false,
+            isForSale: false,
+            price: 0,
+            tokenId: newTokenId
         });
 
         emit ProductMinted(
