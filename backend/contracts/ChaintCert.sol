@@ -24,6 +24,9 @@ contract ChainCert is ERC721A, Ownable {
     mapping(string => uint256) private _serialNumberToTokenId;
     mapping(uint256 => Product) private _products;
 
+    mapping(address => uint256[]) private _ownedTokens;
+    mapping(uint256 => uint256) private _ownedTokensIndex;
+
     event ProductMinted(
         address indexed recipient,
         uint256 tokenId,
@@ -133,22 +136,20 @@ contract ChainCert is ERC721A, Ownable {
 
     /**
      * @dev Return all product owned by a buyer. An owned product limit can be set in order to enforce security and performance
+    /**
+     * @dev Retrieve the list of products owned by a given address
+     * @param owner Address of the product owner
      */
-    function getProductsByOwner() external view returns (Product[] memory) {
-        uint256 balance = balanceOf(msg.sender);
-        require(balance > 0, "You dont own any product");
+    function getProductsByOwner(
+        address owner
+    ) external view returns (Product[] memory) {
+        uint256 balance = _ownedTokens[owner].length;
+        Product[] memory products = new Product[](balance);
 
-        Product[] memory ownerProducts = new Product[](balance);
-        uint256 count = 0;
-
-    // ****************************************************************** revoir la boucle faire un maping
-        for (uint256 i = _startTokenId(); i < _nextTokenId(); i++) {
-            if (_exists(i) && ownerOf(i) == msg.sender) {
-                ownerProducts[count] = _products[i];
-                count++;
-            }
+        for (uint256 i = 0; i < balance; i++) {
+            products[i] = _products[_ownedTokens[owner][i]];
         }
 
-        return ownerProducts;
+        return products;
     }
 }
